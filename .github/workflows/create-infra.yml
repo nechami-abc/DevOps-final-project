@@ -286,9 +286,9 @@ jobs:
         run: echo "### Lab instance destroyed — remove the EC2_HOST secret if you're done with the lab (EC2_SSH_KEY and the AWS key pair can stay for next time)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Terraform state (if exists)
-      if: hashFiles('terraform/terraform.tfstate') != ''
-      uses: actions/upload-artifact@v4
-      with:
-      name: tfstate
-      path: terraform/terraform.tfstate
-      retention-days: 30
+        if: hashFiles('terraform/terraform.tfstate') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfstate
+          path: terraform/terraform.tfstate
+          retention-days: 30
