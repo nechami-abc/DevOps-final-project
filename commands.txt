@@ -1,0 +1,24 @@
+
+
+aws sts get-caller-identity
+
+cd /mnt/d/ansible
+
+ cat inventory/hosts.ini
+
+# Copy to hosts.ini and fill in the public_ip from `terraform output public_ip`.
+# ansible/provision.sh generates this file for you automatically.
+[shoplist]
+34.244.75.175 ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/d/ansible/inventory/shoplist.pem
+
+sudo su
+apt-get update
+apt-get install lsb-release software-properties-common
+apt-add-repository -y ppa:ansible/ansible
+apt-get update
+apt-get install ansible
+
+
+
+ansible-playbook -i ansible/inventory/hosts.ini playbooks/install-minikube.yml \
+  --ssh-common-args='-o StrictHostKeyChecking=no'

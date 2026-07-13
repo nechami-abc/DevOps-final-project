@@ -1,0 +1,294 @@
+name: Create/Destroy Lab Infra
+
+# Runs the Lecture 4 "provision the lab instance" step entirely on GitHub-hosted
+# runners — no local Terraform/Ansible/AWS CLI install needed. Built for the
+# Windows-only, no-WSL student environment: everything below runs on
+# ubuntu-latest, students only ever click "Run workflow" twice.
+#
+# Two independent manual dispatches — no GitHub Environment/required-reviewers
+# setup needed, the approval gate is simply "a human chose to run this a
+# second time after reading the plan":
+#   stage: plan    — always dispatched first. Computes the Terraform plan
+#                    (create or destroy) and posts it to the job summary.
+#                    Nothing touches AWS beyond a read-only plan. Uploads the
+#                    plan file as an artifact.
+#   stage: confirm — dispatched second, by hand, after a human reads the plan
+#                    job's summary. Fetches that exact plan artifact and runs
+#                    `terraform apply` on it — no re-planning, no drift between
+#                    what was reviewed and what happens. Refuses to run if the
+#                    plan it finds doesn't match the action/key_name requested
+#                    now (guards against confirming a stale or wrong plan).
+#
+# State handling: Terraform's local backend writes terraform.tfstate to the
+# runner's disk, which is thrown away when the job ends. To survive across
+# separate workflow runs, state is uploaded as a build artifact after every
+# run and downloaded from the most recent successful run before init. No S3
+# bucket, no Terraform Cloud account — state lives in GitHub Actions
+# artifacts only.
+#
+# SSH key handling: unlike an earlier version of this pipeline, the keypair is
+# NOT generated per run — you create an AWS key pair once yourself and put its
+# private key in the EC2_SSH_KEY repo secret (same secret ci-cd.yml already
+# uses for deploys), then pass that key pair's name as the key_name input.
+# This keeps the same key valid across every apply/destroy cycle instead of
+# minting a new one that only matches a instance created in that same run —
+# see docs/lecture-4-final-lesson/secrets-setup.md for the one-time setup.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "apply (create/update the lab instance) or destroy (tear it down)"
+        type: choice
+        options: [apply, destroy]
+        default: apply
+      stage:
+        description: "plan first (review the job summary), then confirm as a separate manual run to actually apply it"
+        type: choice
+        options: [plan, confirm]
+        default: plan
+      key_name:
+        description: "Name of an EC2 key pair you already created in AWS — its private key must be in the EC2_SSH_KEY repo secret"
+        required: true
+        default: "shoplist-key"
+      image_tag:
+        description: "Image tag to deploy on apply+confirm (default: current commit's short SHA — make sure ci-cd.yml already built+pushed it, and the ghcr.io packages are public)"
+        required: false
+        default: ""
+
+env:
+  AWS_REGION: eu-west-1
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  plan:
+    if: inputs.stage == 'plan'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Find last successful run of this workflow (for prior state)
+        id: last_run
+        run: |
+          RUN_ID=$(gh run list --workflow=create-infra.yml --status=success \
+            --json databaseId --limit 1 --jq '.[0].databaseId // empty')
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download previous Terraform state
+        if: steps.last_run.outputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: tfstate
+          path: terraform/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.last_run.outputs.run_id }}
+        continue-on-error: true # first-ever run: no artifact yet, that's fine
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform plan (apply)
+        if: inputs.action == 'apply'
+        working-directory: terraform
+        run: terraform plan -input=false -var "key_name=${{ inputs.key_name }}" -out=tfplan
+
+      - name: Terraform plan (destroy)
+        if: inputs.action == 'destroy'
+        working-directory: terraform
+        run: terraform plan -destroy -input=false -var "key_name=${{ inputs.key_name }}" -out=tfplan
+
+      - name: Post plan to job summary for review
+        working-directory: terraform
+        run: |
+          {
+            echo "### Terraform plan (action: ${{ inputs.action }}, key_name: ${{ inputs.key_name }})"
+            echo ""
+            echo "Review this, then run this workflow again with **stage: confirm** and the same action/key_name to apply it."
+            echo ""
+            echo '```'
+            terraform show -no-color tfplan
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record what this plan was for (confirm step checks this matches)
+        working-directory: terraform
+        run: echo "${{ inputs.action }} ${{ inputs.key_name }}" > plan-meta.txt
+
+      - name: Upload plan file
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: |
+            terraform/tfplan
+            terraform/plan-meta.txt
+          retention-days: 3
+
+      - name: Upload Terraform state (unchanged pass-through)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfstate
+          path: terraform/terraform.tfstate
+          retention-days: 30
+
+  confirm:
+    if: inputs.stage == 'confirm'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ inputs.image_tag }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=${GITHUB_SHA::8}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Find last successful run of this workflow (should be the plan being confirmed)
+        id: last_run
+        run: |
+          RUN_ID=$(gh run list --workflow=create-infra.yml --status=success \
+            --json databaseId --limit 1 --jq '.[0].databaseId // empty')
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::No previous successful run found — run this workflow with stage=plan first."
+            exit 1
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download the plan to confirm
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.last_run.outputs.run_id }}
+
+      - name: Download prior state
+        uses: actions/download-artifact@v4
+        with:
+          name: tfstate
+          path: terraform/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.last_run.outputs.run_id }}
+        continue-on-error: true
+
+      - name: Verify the plan matches what's being confirmed now
+        working-directory: terraform
+        run: |
+          EXPECTED="${{ inputs.action }} ${{ inputs.key_name }}"
+          ACTUAL="$(cat plan-meta.txt)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Most recent plan was for '$ACTUAL', but confirm was requested for '$EXPECTED'. Run stage=plan again with the action/key_name you actually want, then confirm that."
+            exit 1
+          fi
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform apply (exactly the reviewed plan — no re-planning)
+        working-directory: terraform
+        run: terraform apply -input=false tfplan
+
+      - name: Get public IP
+        if: inputs.action == 'apply'
+        working-directory: terraform
+        run: echo "PUBLIC_IP=$(terraform output -raw public_ip)" >> "$GITHUB_ENV"
+
+      - name: Write SSH private key from the EC2_SSH_KEY secret
+        if: inputs.action == 'apply'
+        working-directory: terraform
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          printf '%s\n' "$EC2_SSH_KEY" > lab-key
+          chmod 600 lab-key
+
+      - name: Wait for SSH
+        if: inputs.action == 'apply'
+        working-directory: terraform
+        run: |
+          until ssh -i lab-key -o StrictHostKeyChecking=no -o ConnectTimeout=5 \
+            "ubuntu@${PUBLIC_IP}" true 2>/dev/null; do
+            echo "waiting for SSH on ${PUBLIC_IP}..."
+            sleep 5
+          done
+
+      - name: Write Ansible inventory
+        if: inputs.action == 'apply'
+        run: |
+          mkdir -p ansible/inventory
+          cat > ansible/inventory/hosts.ini <<EOF
+          [shoplist]
+          ${PUBLIC_IP} ansible_user=ubuntu ansible_ssh_private_key_file=${{ github.workspace }}/terraform/lab-key
+          EOF
+
+      - name: Install Ansible
+        if: inputs.action == 'apply'
+        run: pip install --quiet ansible
+
+      - name: Install minikube on the lab instance
+        if: inputs.action == 'apply'
+        run: ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/install-minikube.yml
+
+      - name: Deploy ShopList
+        if: inputs.action == 'apply'
+        run: |
+          ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/deploy-app.yml \
+            -e "github_owner=${{ github.repository_owner }}" -e "image_tag=${IMAGE_TAG}"
+
+      - name: Job summary (apply)
+        if: inputs.action == 'apply'
+        run: |
+          {
+            echo "### ShopList lab instance is up"
+            echo ""
+            echo "App: http://${PUBLIC_IP}:30080"
+            echo ""
+            echo "**Next step — add 1 repo secret** (Settings → Secrets and variables → Actions) so the CI/CD pipeline can deploy updates:"
+            echo ""
+            echo "\`EC2_HOST\` = \`${PUBLIC_IP}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Job summary (destroy)
+        if: inputs.action == 'destroy'
+        run: echo "### Lab instance destroyed — remove the EC2_HOST secret if you're done with the lab (EC2_SSH_KEY and the AWS key pair can stay for next time)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Terraform state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfstate
+          path: terraform/terraform.tfstate
+          retention-days: 30

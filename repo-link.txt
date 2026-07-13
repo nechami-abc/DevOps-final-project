@@ -1,0 +1,11 @@
+https://gitlab.com/rivky9505/public-final-devops-2026
+
+git clone https://gitlab.com/rivky9505/public-final-devops-2026.git
+
+cd .\public-final-devops-2026\
+
+code .
+
+RUN pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org --no-cache-dir -r requirements.txt
+
+ --trusted-host pypi.org --trusted-host files.pythonhosted.org

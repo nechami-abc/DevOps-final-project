@@ -1,0 +1,63 @@
+stages:
+  - build
+  - verify
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_BACKEND: $CI_REGISTRY_IMAGE/backend
+  IMAGE_FRONTEND: $CI_REGISTRY_IMAGE/frontend
+
+# Each job has its own Docker daemon — build and push in the same job.
+# Images are tagged by git SHA only. :latest is never used.
+
+build-backend:
+  stage: build
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_BACKEND:$CI_COMMIT_SHORT_SHA app/backend/
+    - docker run --rm $IMAGE_BACKEND:$CI_COMMIT_SHORT_SHA
+        python -c "from flask import Flask; import psycopg2; print('dependencies ok')"
+    - docker push $IMAGE_BACKEND:$CI_COMMIT_SHORT_SHA
+  rules:
+    - changes:
+        - app/backend/**/*
+        - .gitlab-ci.yml
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+build-frontend:
+  stage: build
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $IMAGE_FRONTEND:$CI_COMMIT_SHORT_SHA app/frontend/
+    - docker push $IMAGE_FRONTEND:$CI_COMMIT_SHORT_SHA
+  rules:
+    - changes:
+        - app/frontend/**/*
+        - .gitlab-ci.yml
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+verify-registry:
+  stage: verify
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $IMAGE_BACKEND:$CI_COMMIT_SHORT_SHA
+    - docker pull $IMAGE_FRONTEND:$CI_COMMIT_SHORT_SHA
+    - echo "Both images confirmed in registry at SHA $CI_COMMIT_SHORT_SHA"
+  needs:
+    - build-backend
+    - build-frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

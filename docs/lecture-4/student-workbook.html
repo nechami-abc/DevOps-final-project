@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 4 — Cloud Deployment (Free Tier) | Student Workbook</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #1d4ed8 0%, #2563EB 100%); color: white; padding: 3rem 2rem 2rem; text-align: center; }
+    .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.85; margin-bottom: 1rem; }
+    .badge-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.85rem; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .outcome-box { background: white; border-left: 5px solid #2563EB; border-radius: 8px; padding: 1.5rem 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .outcome-box h2 { color: #1d4ed8; font-size: 1.2rem; margin-bottom: 1rem; }
+    .outcome-box h3 { color: #1e40af; font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+    .outcome-box ul { margin-left: 1.25rem; }
+    .outcome-box li { font-size: 0.92rem; color: #334155; margin: 0.3rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #eff6ff; color: #1d4ed8; text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid #bfdbfe; }
+    td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tr:hover td { background: #f8fafc; }
+    .section { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .section h2 { color: #1d4ed8; font-size: 1.4rem; border-bottom: 2px solid #bfdbfe; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .section h3 { color: #1e40af; font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+    .section h4 { color: #1e293b; font-size: 1rem; margin: 1rem 0 0.5rem; }
+    .concept-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.25rem; margin: 1rem 0 1.5rem; }
+    .concept-card .label { font-size: 0.75rem; font-weight: 700; color: #2563EB; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .concept-card p { font-size: 0.95rem; color: #334155; margin-top: 0.4rem; }
+    .concept-block { margin: 1.5rem 0 2.25rem; padding-bottom: 1.5rem; border-bottom: 1px dashed #cbd5e1; }
+    .concept-block:last-child { border-bottom: none; }
+    .why-how p { font-size: 0.92rem; color: #334155; margin: 0.4rem 0 0.8rem; }
+    .mistake { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.88rem; color: #991b1b; }
+    .mistake strong { color: #dc2626; }
+    .tip { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.88rem; color: #14532d; }
+    .tip strong { color: #16a34a; }
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 1rem 0; }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    pre code { color: #e2e8f0; }
+    .inline-code { background: #eff6ff; color: #1d4ed8; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', monospace; font-size: 0.875em; }
+    .step { counter-increment: step; display: flex; gap: 1.25rem; margin: 1.5rem 0; align-items: flex-start; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; }
+    .step-num { background: #2563EB; color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .step-content { flex: 1; min-width: 0; }
+    .step-content h4 { color: #1e293b; font-size: 1rem; margin-bottom: 0.5rem; }
+    .step-content .context { color: #475569; font-size: 0.9rem; margin-bottom: 0.6rem; }
+    .expected { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .expected .label { font-size: 0.75rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .prereq-list { list-style: none; }
+    .prereq-list li { padding: 0.4rem 0; display: flex; align-items: flex-start; gap: 0.6rem; }
+    .prereq-list li::before { content: "☐"; font-size: 1.1rem; color: #2563EB; flex-shrink: 0; }
+    .qa-item { border-left: 3px solid #2563EB; padding: 0; margin: 1.25rem 0; border-radius: 0 6px 6px 0; overflow: hidden; }
+    .qa-item .q { font-weight: 600; background: #2563EB; color: white; padding: 0.6rem 1rem; font-size: 0.95rem; }
+    .qa-item .a { color: #334155; font-size: 0.92rem; background: #f8fafc; padding: 0.75rem 1rem; }
+    .diagram { background: #0f172a; color: #94a3b8; border-radius: 8px; padding: 1.5rem; font-family: monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; margin: 1rem 0; white-space: pre; }
+    footer { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 2rem; }
+
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { background: white; }
+      .header { background: #2563EB !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section, .outcome-box { box-shadow: none; border: 1px solid #e2e8f0; page-break-inside: avoid; }
+      .step, .concept-block, .qa-item { page-break-inside: avoid; }
+      .container { max-width: 100%; }
+      pre { page-break-inside: avoid; }
+      th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Lecture 4 — Cloud Deployment (Free Tier)</h1>
+  <p class="subtitle">ShopList DevOps Training Program &bull; Lecture 4 — Student Workbook</p>
+  <div class="badge-row">
+    <span class="badge">Duration: ~3h</span>
+    <span class="badge">Audience: Lecture 1–3 graduates</span>
+    <span class="badge">Environment: AWS free tier + Terraform + Ansible</span>
+    <span class="badge">Branch: feature/lecture-4</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="outcome-box">
+    <h2>Lecture Outcome (STRICT)</h2>
+    <table>
+      <thead><tr><th>File</th><th>Change</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline-code">terraform/main.tf</code></td><td>Modified</td><td>1 EC2 instance + 1 security group — replaces the old EKS/VPC draft</td></tr>
+        <tr><td><code class="inline-code">terraform/variables.tf</code></td><td>Modified</td><td>aws_region, instance_type, key_name, allowed_ssh_cidr</td></tr>
+        <tr><td><code class="inline-code">terraform/outputs.tf</code></td><td>Modified</td><td>public_ip, app_url, ssh_command</td></tr>
+        <tr><td><code class="inline-code">ansible/inventory/hosts.ini.example</code></td><td>New</td><td>Inventory template</td></tr>
+        <tr><td><code class="inline-code">ansible/playbooks/install-minikube.yml</code></td><td>New</td><td>Installs Docker + kubectl + minikube on the EC2 box</td></tr>
+        <tr><td><code class="inline-code">ansible/playbooks/deploy-app.yml</code></td><td>New</td><td>Applies kubernetes/*.yml to the remote minikube</td></tr>
+        <tr><td><code class="inline-code">ansible/provision.sh</code></td><td>New</td><td>The one manual command that runs the whole provisioning flow</td></tr>
+        <tr><td><code class="inline-code">.github/workflows/ci-cd.yml</code></td><td>Modified (renamed from build-and-push.yml)</td><td>Adds a deploy job on top of Lecture 3's build/push</td></tr>
+      </tbody>
+    </table>
+
+    <h3>What does NOT exist yet — and never will, in this course</h3>
+    <ul>
+      <li>No managed Kubernetes (EKS/GKE) — doesn't fit the free tier</li>
+      <li>No multi-node cluster, no autoscaling</li>
+      <li>No HTTPS/TLS or custom domain</li>
+      <li>No monitoring/alerting stack</li>
+    </ul>
+
+    <h3>What you CAN do after this lecture</h3>
+    <ul>
+      <li>Provision a real AWS EC2 instance from Terraform and tear it down again with <code class="inline-code">terraform destroy</code></li>
+      <li>Install minikube on a remote Linux box over SSH using Ansible, idempotently</li>
+      <li>Deploy ShopList to that remote minikube and reach it from any browser via a public IP</li>
+      <li>Push a code change to your own GitHub repo and watch GitHub Actions rebuild and redeploy automatically</li>
+      <li>Explain why infrastructure provisioning and application deployment should not share a trigger</li>
+    </ul>
+
+    <h3>What you CANNOT do yet</h3>
+    <ul>
+      <li>Survive the EC2 instance itself failing (single box, single point of failure — a deliberate free-tier trade-off)</li>
+      <li>Roll out zero-downtime across multiple nodes</li>
+      <li>Serve traffic over HTTPS with a real domain name</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Architecture</h2>
+    <p style="color:#475569; margin-bottom:1rem;">Two separate flows, on purpose: a manual provisioning flow you run once by hand, and an automatic deployment flow that runs on every push.</p>
+    <div class="diagram">MANUAL — run once, by hand:
+
+  ansible/provision.sh
+       │
+       ▼
+  terraform apply ──────────► EC2 instance (t3.micro, free tier)
+       │                       + security group (22, 30080)
+       ▼
+  ansible install-minikube.yml ─► Docker + kubectl + minikube installed
+       │                          --driver=none, 2GB swap added
+       ▼
+  ansible deploy-app.yml ──────► kubernetes/*.yml applied
+                                  (image swapped to ghcr.io:&lt;tag&gt;)
+
+
+AUTOMATIC — every push to your new GitHub repo:
+
+  git push
+       │
+       ▼
+  .github/workflows/ci-cd.yml
+       │
+  ┌────┴─────────────────────────────┐
+  │ build-backend / build-frontend   │  (same pattern as Lecture 3)
+  │   → push images to ghcr.io       │
+  └────┬─────────────────────────────┘
+       ▼
+  verify-registry
+       ▼
+  deploy  ──► SSH into EC2_HOST, kubectl set image ..., kubectl rollout status
+       ▼
+  ShopList live at http://&lt;public-ip&gt;:30080, new version</div>
+    <p style="color:#475569; font-size:0.9rem;"><strong>Application code is unchanged.</strong> Zero modifications to <code class="inline-code">app.py</code>, <code class="inline-code">nginx.conf</code>, or any <code class="inline-code">Dockerfile</code>. The <code class="inline-code">kubernetes/*.yml</code> files used by Lecture 2/3 are also unchanged — Ansible copies them and swaps the image line at deploy time, it never edits the originals.</p>
+  </div>
+
+  <div class="section">
+    <h2>Prerequisites</h2>
+    <ul class="prereq-list">
+      <li>Lecture 3 complete — <code class="inline-code">.gitlab-ci.yml</code> builds and pushes images; the minikube cluster from Lecture 2/3 is still running locally</li>
+      <li>An AWS account with the free tier active, and the AWS CLI configured (<code class="inline-code">aws configure</code>) with credentials that can create EC2 instances and security groups</li>
+      <li>An EC2 key pair already created in your AWS account/region (EC2 console → Key Pairs → Create key pair). Save the .pem file</li>
+      <li><code class="inline-code">terraform >= 1.6</code> and <code class="inline-code">ansible >= 2.15</code> installed (see docs/bootstrap-kit.md §6)</li>
+      <li>A GitHub account and the ability to create a new repository</li>
+      <li>On branch <code class="inline-code">feature/lecture-4</code> (<code class="inline-code">git checkout -b feature/lecture-4</code>)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Part 1 — Core Concepts</h2>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 1 — AWS Free Tier</div>
+        <p>New AWS accounts get 750 hours/month of a t2.micro/t3.micro EC2 instance and 30GB of storage, free, for 12 months.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>AWS wants developers to try the platform without financial risk. It covers exactly one small Linux box running continuously — enough for a single-instance lab, not enough for a managed control plane.</p>
+        <h4>How It Works</h4>
+        <table>
+          <thead><tr><th>Resource</th><th>Free tier limit</th></tr></thead>
+          <tbody>
+            <tr><td>EC2 t2.micro/t3.micro</td><td>750 hrs/month (effectively: one instance, running all month)</td></tr>
+            <tr><td>EBS storage</td><td>30GB</td></tr>
+            <tr><td>Data transfer out</td><td>100GB/month</td></tr>
+            <tr><td>EKS control plane</td><td><strong>Not included at any usage level</strong> — flat ~$0.10/hr</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> leaving the instance running after the lecture. <code class="inline-code">terraform destroy</code> is not optional cleanup — it's how you stop being billed. Free tier hours are also capped per month; forgetting to destroy across several lab sessions can burn through them.</div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 2 — Infrastructure as Code (Terraform)</div>
+        <p>Terraform lets you describe cloud infrastructure in a file and have a tool create it, rather than clicking through a console or running one-off CLI commands.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>Manually-created infrastructure is not reproducible, not reviewable in a pull request, and easy to forget to tear down. A .tf file is all three: reproducible, reviewable, and destroyable with one command.</p>
+        <h4>How It Works</h4>
+        <table>
+          <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">terraform init</code></td><td>Downloads the hashicorp/aws provider plugin</td></tr>
+            <tr><td><code class="inline-code">terraform plan</code></td><td>Computes and prints the diff between current state and desired state — changes nothing</td></tr>
+            <tr><td><code class="inline-code">terraform apply</code></td><td>Applies that diff — creates/updates real AWS resources</td></tr>
+            <tr><td><code class="inline-code">terraform destroy</code></td><td>Deletes everything Terraform's state file says it created</td></tr>
+          </tbody>
+        </table>
+        <p>Terraform decides <em>what</em> to create from <code class="inline-code">data</code> blocks (read-only lookups, like "the default VPC") and <code class="inline-code">resource</code> blocks (things it owns and manages, like the EC2 instance).</p>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> running <code class="inline-code">terraform apply</code> from a different directory than the one containing the state file, or on a different machine — creates a <em>second</em> untracked instance instead of managing the first one. Always run Terraform commands from <code class="inline-code">terraform/</code> in this repo.</div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 3 — Configuration Management (Ansible)</div>
+        <p>Ansible installs and configures software on remote machines over plain SSH, described declaratively in YAML playbooks.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>Terraform's job stops the instant the EC2 instance exists. Something still has to log in and install Docker, kubectl, and minikube. Doing that by hand, consistently, across every lab environment, doesn't scale — a playbook does it the same way every time.</p>
+        <h4>How It Works</h4>
+        <ul style="margin-left:1.25rem;">
+          <li style="margin:0.4rem 0; font-size:0.92rem; color:#334155;">An <strong>inventory</strong> (<code class="inline-code">ansible/inventory/hosts.ini</code>) lists which hosts to run against</li>
+          <li style="margin:0.4rem 0; font-size:0.92rem; color:#334155;">A <strong>playbook</strong> (e.g. <code class="inline-code">install-minikube.yml</code>) lists ordered <strong>tasks</strong>, each using a built-in module (<code class="inline-code">ansible.builtin.apt</code>, <code class="inline-code">ansible.builtin.copy</code>, etc.)</li>
+          <li style="margin:0.4rem 0; font-size:0.92rem; color:#334155;">Ansible connects over SSH using the key in the inventory — no agent pre-installed on the target</li>
+          <li style="margin:0.4rem 0; font-size:0.92rem; color:#334155;">Playbooks aim to be <strong>idempotent</strong>: running them twice produces the same end state</li>
+        </ul>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> treating a playbook like a one-shot shell script and assuming re-running it is always safe without checking. Most Ansible modules (apt, systemd, file) are idempotent by default; raw command/shell tasks (like <code class="inline-code">fallocate -l 2G /swapfile</code>) are not — that's exactly why that task is wrapped in a <code class="inline-code">when: not swapfile.stat.exists</code> guard.</div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 4 — minikube with --driver=none</div>
+        <p>On your laptop, minikube usually runs inside a VM or a Docker container acting as the "node." On a cloud VM, it can run directly on the host instead.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>A t3.micro (1 vCPU, 1GB RAM) has no room for a nested VM on top of an already-thin OS. --driver=none skips that layer: the kubelet, API server, and other components run as ordinary processes on the Ubuntu host itself.</p>
+        <h4>How It Works</h4>
+        <table>
+          <thead><tr><th>Aspect</th><th>Laptop minikube (--driver=docker)</th><th>EC2 minikube (--driver=none)</th></tr></thead>
+          <tbody>
+            <tr><td>Node</td><td>Runs inside a container</td><td>Is the host machine</td></tr>
+            <tr><td>NodePort reachability</td><td>localhost:&lt;port&gt; (or tunnel)</td><td>Host's public IP directly — no tunnel needed</td></tr>
+            <tr><td>Resource overhead</td><td>VM/container layer + k8s components</td><td>k8s components only</td></tr>
+            <tr><td>Typical use</td><td>Local development</td><td>Single disposable cloud lab instance</td></tr>
+          </tbody>
+        </table>
+        <p>This is why the security group only needs to open port 30080 (the frontend NodePort) — there's no extra networking layer between "the Service" and "the internet."</p>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> forgetting <code class="inline-code">CHANGE_MINIKUBE_NONE_USER=true</code> when starting minikube as root (which --driver=none requires). Without it, the kubeconfig stays owned by root and your SSH user's kubectl commands fail with permission errors.</div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 5 — Two Pipelines, Two Purposes</div>
+        <p>Provisioning (Terraform + the initial Ansible install) and deployment (rebuilding and redeploying the app) are kept as two separate flows with two separate triggers.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>Provisioning costs money and takes minutes; you want it deliberate. Deployment should be fast, cheap, and safe to run on every commit. If they were the same pipeline, every git push would risk re-provisioning or even destroying real infrastructure.</p>
+        <h4>How It Works</h4>
+        <table>
+          <thead><tr><th></th><th>Provisioning</th><th>Deployment</th></tr></thead>
+          <tbody>
+            <tr><td>Trigger</td><td>Manual (./ansible/provision.sh)</td><td>Automatic (git push)</td></tr>
+            <tr><td>Tooling</td><td>Terraform + Ansible (full playbook)</td><td>kubectl set image over SSH</td></tr>
+            <tr><td>Frequency</td><td>Rare</td><td>Every commit</td></tr>
+            <tr><td>Risk if wrong</td><td>Creates/destroys real AWS resources</td><td>Worst case: bad image tag, easy rollback</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> "simplifying" by wiring terraform apply into the CI/CD pipeline "to save a step." This is the single most common way free-tier labs turn into surprise AWS bills.</div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-card">
+        <div class="label">Concept 6 — SSH-based Deployment (no AWS credentials in CI)</div>
+        <p>The deploy job in ci-cd.yml never calls any AWS API. It SSHes into the box and runs kubectl directly — the exact same commands you'd type yourself.</p>
+      </div>
+      <div class="why-how">
+        <h4>Why It Exists</h4>
+        <p>A single EC2 instance has no managed control-plane API to call, unlike EKS. SSH is the only interface that already exists, so the pipeline uses it instead of introducing AWS IAM roles/access keys just for a demo lab.</p>
+        <h4>How It Works</h4>
+        <pre><code>- name: Update running deployment over SSH
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script: |
+      kubectl set image deployment/backend backend=ghcr.io/OWNER/shoplist-backend:SHA -n shoplist
+      kubectl set image deployment/frontend frontend=ghcr.io/OWNER/shoplist-frontend:SHA -n shoplist
+      kubectl rollout status deployment/backend -n shoplist --timeout=120s
+      kubectl rollout status deployment/frontend -n shoplist --timeout=120s</code></pre>
+        <p><code class="inline-code">kubectl set image</code> patches only the container image on an existing Deployment — it's a targeted update, not a full manifest re-apply, which is why the CI job doesn't need Ansible or the kubernetes/*.yml files at all for a routine redeploy.</p>
+      </div>
+      <div class="mistake"><strong>Common mistake:</strong> pasting the .pem file's contents into EC2_SSH_KEY with the wrong line endings or a missing trailing newline. Copy the file exactly as-is — a mangled key fails silently with a generic "Permission denied (publickey)" error.</div>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <h2>Part 2 — Step-by-Step Instructions</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Create an AWS key pair and configure credentials</h4>
+        <p class="context">Terraform needs working AWS credentials and an existing key pair name before it can create anything.</p>
+        <pre><code>aws configure
+# AWS Access Key ID, Secret Access Key, region (must match terraform/variables.tf aws_region), output format
+
+aws ec2 create-key-pair --key-name shoplist-key --query 'KeyMaterial' --output text > ~/.ssh/shoplist-key.pem
+chmod 400 ~/.ssh/shoplist-key.pem</code></pre>
+        <p style="font-size:0.88rem;color:#475569;">Note the key name (<code class="inline-code">shoplist-key</code>) — you'll pass it as <code class="inline-code">key_name</code> to Terraform.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Review terraform/variables.tf</h4>
+        <p class="context">These variables control region, instance size, key pair, and SSH access — review before applying.</p>
+        <pre><code>variable "aws_region" {
+  description = "AWS region in which to deploy the lab instance"
+  type        = string
+  default     = "eu-west-1"
+}
+
+variable "cluster_name" {
+  description = "Name used to tag the EC2 instance and its security group"
+  type        = string
+  default     = "shoplist"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type — t3.micro is free-tier eligible"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "key_name" {
+  description = "Name of an existing EC2 key pair (create one in the AWS console first)"
+  type        = string
+}
+
+variable "allowed_ssh_cidr" {
+  description = "CIDR allowed to SSH into the instance — restrict this to your own IP/32 in real use"
+  type        = string
+  default     = "0.0.0.0/0"
+}</code></pre>
+        <p style="font-size:0.88rem;color:#475569;"><code class="inline-code">key_name</code> has no default — Terraform will prompt for it (or pass it with <code class="inline-code">-var</code>).</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Review terraform/main.tf</h4>
+        <p class="context">This is the entire cloud footprint of the lecture: default VPC lookup, one security group, one instance.</p>
+        <pre><code>data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+}
+
+resource "aws_security_group" "shoplist" {
+  name   = "${var.cluster_name}-sg"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ssh_cidr]
+  }
+  ingress {
+    from_port   = 30080
+    to_port     = 30080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "shoplist" {
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  subnet_id                   = data.aws_subnets.default.ids[0]
+  vpc_security_group_ids      = [aws_security_group.shoplist.id]
+  key_name                    = var.key_name
+  associate_public_ip_address = true
+
+  tags = { Name = var.cluster_name }
+}</code></pre>
+        <p style="font-size:0.88rem;color:#475569;">No VPC module, no EKS module, no generated keys — the default VPC, one security group, one instance.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>terraform init, plan, apply</h4>
+        <p class="context">Init downloads the provider, plan previews the diff, apply creates the real resources.</p>
+        <pre><code>cd terraform
+terraform init
+terraform plan -var="key_name=shoplist-key"</code></pre>
+        <p style="font-size:0.88rem;color:#475569;">Read the plan output: it should show exactly 2 resources to add (aws_security_group.shoplist, aws_instance.shoplist), nothing to change or destroy.</p>
+        <pre><code>terraform apply -var="key_name=shoplist-key"
+# type "yes" when prompted
+terraform output public_ip</code></pre>
+        <div class="expected"><div class="label">Expected</div>You now have a real, billable (though free-tier-covered) EC2 instance. Keep the public IP handy.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Create the Ansible inventory</h4>
+        <p class="context">Ansible needs to know which host to connect to and which key to use.</p>
+        <pre><code>cd ..
+cp ansible/inventory/hosts.ini.example ansible/inventory/hosts.ini</code></pre>
+        <p style="font-size:0.88rem;color:#475569;">Edit <code class="inline-code">ansible/inventory/hosts.ini</code> — replace the placeholder with your real public IP and key path:</p>
+        <pre><code>[shoplist]
+YOUR_PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/shoplist-key.pem</code></pre>
+        <pre><code>ssh -i ~/.ssh/shoplist-key.pem ubuntu@YOUR_PUBLIC_IP
+exit</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h4>Run install-minikube.yml</h4>
+        <p class="context">Installs Docker, kubectl, minikube, adds swap, and starts the cluster on the remote box.</p>
+        <pre><code>ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/install-minikube.yml</code></pre>
+        <div class="expected"><div class="label">Expected</div>The play recap shows failed=0; the last task ("Wait for the node to be Ready") succeeds.</div>
+        <p style="font-size:0.88rem;color:#475569;">This installs Docker, downloads kubectl and minikube, adds a 2GB swap file, and starts minikube with --driver=none.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h4>Run deploy-app.yml</h4>
+        <p class="context">Applies the kubernetes manifests to the remote minikube, pointing at the ghcr.io images.</p>
+        <pre><code>ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/deploy-app.yml \
+  -e "github_owner=YOUR_GITHUB_USERNAME" -e "image_tag=latest"</code></pre>
+        <div class="expected"><div class="label">Expected</div>Both rollout status tasks succeed, and the final debug task prints "ShopList is live at http://YOUR_PUBLIC_IP:30080".</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h4>Or just run both with provision.sh</h4>
+        <p class="context">Steps 4–7 are exactly what provision.sh automates — use it after you understand each stage.</p>
+        <pre><code>./ansible/provision.sh YOUR_GITHUB_USERNAME latest ~/.ssh/shoplist-key.pem</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h4>Create a new GitHub repo and push the project</h4>
+        <p class="context">GitHub Actions needs its own repository and secrets — GitLab remains untouched.</p>
+        <pre><code># On github.com: create a new empty repository, e.g. "devops-tikshuv-project"
+git remote add github https://github.com/YOUR_GITHUB_USERNAME/devops-tikshuv-project.git
+git push github feature/lecture-4:main</code></pre>
+        <p style="font-size:0.88rem;color:#475569;">In the new GitHub repo: Settings → Secrets and variables → Actions → New repository secret, add:</p>
+        <ul style="margin-left:1.25rem; font-size:0.88rem; color:#475569;">
+          <li><code class="inline-code">EC2_HOST</code> = the public IP from Step 4</li>
+          <li><code class="inline-code">EC2_SSH_KEY</code> = the full contents of ~/.ssh/shoplist-key.pem</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <h4>Push a change and watch it redeploy</h4>
+        <p class="context">Confirms the automatic half of the pipeline actually reaches the live instance.</p>
+        <p style="font-size:0.88rem;color:#475569;">Make a trivial, visible change (e.g. a comment in app/frontend/index.html), commit, and push to main on the github remote. Watch build-backend, build-frontend, verify-registry, then deploy run in sequence.</p>
+        <pre><code>curl -s http://YOUR_PUBLIC_IP:30080 | grep -o "&lt;title&gt;.*&lt;/title&gt;"</code></pre>
+        <div class="expected"><div class="label">Expected</div>The change is live without you running any manual kubectl command.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">11</div>
+      <div class="step-content">
+        <h4>Clean up</h4>
+        <p class="context">Free tier or not, always destroy lab infrastructure you're not actively using.</p>
+        <pre><code>cd terraform
+terraform destroy -var="key_name=shoplist-key"</code></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <h2>Interview Questions</h2>
+
+    <div class="qa-item">
+      <div class="q">Q: What is Infrastructure as Code, and what problem does Terraform's state file solve that a plain shell script doesn't?</div>
+      <div class="a">IaC means infrastructure is described declaratively in files instead of created by hand. Terraform's state file records exactly what it created, so terraform destroy (or a future apply) knows precisely what to remove or change — a shell script has no memory of what it already ran.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: Why doesn't AWS EKS qualify for the free tier, and what did we use instead?</div>
+      <div class="a">EKS bills its control plane a flat hourly rate regardless of usage, with no free tier coverage. We used a single free-tier-eligible EC2 instance running minikube with --driver=none instead.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: What does "idempotent" mean in an Ansible playbook, and where do you see it in install-minikube.yml?</div>
+      <div class="a">Idempotent means running the same playbook repeatedly produces the same end state without errors or duplicate side effects. The swap-file task checks swapfile.stat.exists before creating /swapfile, so re-running the playbook doesn't fail or allocate a second swap file.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: Why is infrastructure provisioning kept out of the GitHub Actions pipeline, and what could go wrong if it were triggered automatically?</div>
+      <div class="a">Provisioning creates or destroys real, billable infrastructure and should be deliberate. If it ran on every push, a routine commit could accidentally recreate or tear down the EC2 instance, causing downtime or unexpected AWS charges.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: How does the GitHub Actions deploy job update the running app without AWS credentials, and what are the two secrets it depends on?</div>
+      <div class="a">It SSHes directly into the EC2 instance and runs kubectl set image against the already-running minikube cluster — no AWS API calls are involved. It depends on EC2_HOST (the public IP) and EC2_SSH_KEY (the private key matching the instance's key pair).</div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>Lecture 4 — Cloud Deployment (Free Tier) &bull; ShopList DevOps Training &bull; Course Module Template v1.0</footer>
+</body>
+</html>

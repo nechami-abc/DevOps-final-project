@@ -1,0 +1,152 @@
+---
+# Installs Docker + kubectl + minikube on the lab instance and starts a single-node
+# cluster with --driver=none (kubelet runs directly on the host — no nested VM,
+# and NodePort services are reachable straight on the instance's public IP).
+# t3.micro is 1GB RAM, so this also adds a 2GB swap file to keep minikube stable.
+
+- name: Install minikube on the lab instance
+  hosts: shoplist
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - conntrack
+          - socat
+          - ebtables
+          - curl
+          - containernetworking-plugins
+        state: present
+
+    - name: Install crictl (required by minikube --driver=none)
+      ansible.builtin.unarchive:
+        src: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.29.0/crictl-v1.29.0-linux-amd64.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        mode: "0755"
+        creates: /usr/local/bin/crictl
+
+    - name: Create /opt/cni
+      ansible.builtin.file:
+        path: /opt/cni
+        state: directory
+        mode: "0755"
+
+    - name: Link CNI plugin binaries to /opt/cni/bin (where minikube's none driver expects them)
+      ansible.builtin.file:
+        src: /usr/lib/cni
+        dest: /opt/cni/bin
+        state: link
+        force: true
+
+    - name: Check for containerd config
+      ansible.builtin.stat:
+        path: /etc/containerd/config.toml
+      register: containerd_config
+
+    - name: Generate default containerd config (Ubuntu's docker.io package ships without one)
+      when: not containerd_config.stat.exists
+      block:
+        - name: Create /etc/containerd
+          ansible.builtin.file:
+            path: /etc/containerd
+            state: directory
+            mode: "0755"
+        - name: Write default containerd config
+          ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
+        - name: Restart containerd
+          ansible.builtin.systemd:
+            name: containerd
+            state: restarted
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add ansible_user to the docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
+
+    - name: Check for existing swap file
+      ansible.builtin.stat:
+        path: /swapfile
+      register: swapfile
+
+    - name: Create 2GB swap file
+      when: not swapfile.stat.exists
+      block:
+        - name: Allocate swap file
+          ansible.builtin.command: fallocate -l 2G /swapfile
+        - name: Set swap file permissions
+          ansible.builtin.file:
+            path: /swapfile
+            mode: "0600"
+        - name: Format swap file
+          ansible.builtin.command: mkswap /swapfile
+        - name: Enable swap file
+          ansible.builtin.command: swapon /swapfile
+        - name: Persist swap in fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            line: "/swapfile none swap sw 0 0"
+
+    - name: Download kubectl
+      ansible.builtin.get_url:
+        url: https://dl.k8s.io/release/v1.29.2/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+
+    - name: Download minikube
+      ansible.builtin.get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: "0755"
+
+    - name: Start minikube (driver=none)
+      # --force: t3.micro has ~900MB free RAM after OS overhead, below minikube's 1800MB
+      # preflight minimum. The 2GB swap file above is what actually keeps this stable —
+      # --force just tells minikube to proceed despite failing its physical-RAM-only check.
+      # --container-runtime=containerd: the none driver's default docker runtime needs the
+      # separate cri-dockerd shim on Kubernetes 1.24+; containerd is already installed as a
+      # docker.io dependency and is CRI-native, so this avoids that extra install entirely.
+      ansible.builtin.command: minikube start --driver=none --kubernetes-version=v1.29.2 --force --container-runtime=containerd
+      environment:
+        CHANGE_MINIKUBE_NONE_USER: "true"
+      register: minikube_start
+      changed_when: "'The control-plane node minikube has been created' in minikube_start.stdout or 'Done!' in minikube_start.stdout"
+
+    - name: Wait for the node to be Ready
+      ansible.builtin.command: kubectl get nodes --no-headers
+      register: node_status
+      until: "'Ready' in node_status.stdout"
+      retries: 12
+      delay: 10
+      changed_when: false
+
+    - name: Allow ansible_user to traverse /root (needed to reach the chowned ~/.kube and ~/.minikube)
+      # minikube --driver=none runs as root (HOME=/root) even with CHANGE_MINIKUBE_NONE_USER=true —
+      # that env var only fixes ownership of files under /root/.kube and /root/.minikube, it doesn't
+      # move them. /root itself stays 0700 root:root, which blocks ansible_user from reaching files
+      # it otherwise owns. Adding execute-only for "other" lets it traverse by exact path without
+      # exposing `ls /root` or any other root-owned file.
+      ansible.builtin.file:
+        path: /root
+        mode: "0701"
+
+    - name: Symlink ansible_user's ~/.kube to root's (kubectl defaults to $HOME/.kube/config)
+      ansible.builtin.file:
+        src: /root/.kube
+        dest: "/home/{{ ansible_user }}/.kube"
+        state: link
+        force: true

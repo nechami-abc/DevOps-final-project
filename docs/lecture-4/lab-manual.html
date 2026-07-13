@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 4 — Cloud Deployment (Free Tier) | Lab Manual</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #0e7490 0%, #0891B2 100%); color: white; padding: 3rem 2rem 2rem; text-align: center; }
+    .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.85; }
+    .lab-badge { display: inline-block; background: #042f2e; color: #5eead4; font-weight: 800; letter-spacing: 0.12em; font-size: 0.85rem; padding: 0.45rem 1.4rem; border-radius: 999px; margin-bottom: 1rem; border: 2px solid #5eead4; }
+    .badge-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.85rem; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 2rem 0; }
+    .intro-card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(8,145,178,0.08); }
+    .intro-card h3 { color: #0891B2; font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .intro-card p { color: #134e4a; font-size: 0.92rem; }
+    .exercise { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(8,145,178,0.08); }
+    .exercise-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #a5f3fc; }
+    .exercise-num { background: #0891B2; color: white; width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; flex-shrink: 0; }
+    .exercise-num.medium { background: #0e7490; }
+    .exercise-num.optional { background: #134e4a; }
+    .exercise-meta h2 { color: #0891B2; font-size: 1.3rem; }
+    .exercise-meta .tags { display: flex; gap: 0.5rem; margin-top: 0.3rem; flex-wrap: wrap; }
+    .tag { background: #cffafe; color: #0e7490; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 600; }
+    .section { margin: 1.25rem 0; }
+    .section h3 { color: #0e7490; font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; border-left: 3px solid #0891B2; padding-left: 0.75rem; }
+    pre { background: #042f2e; color: #99f6e4; border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 0.75rem 0; }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    .inline-code { background: #cffafe; color: #0e7490; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', monospace; font-size: 0.875em; }
+    .expected { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .expected-label { font-size: 0.75rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .observe { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; }
+    .observe-label { font-size: 0.75rem; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .observe p { color: #78350f; font-size: 0.92rem; }
+    .broken { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; }
+    .broken-label { font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .broken p { color: #991b1b; font-size: 0.92rem; }
+    .question-block { background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .question-block .q { font-weight: 600; color: #134e4a; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    .question-block .a { color: #0e7490; font-size: 0.9rem; font-style: italic; }
+    .divider { text-align: center; margin: 3rem 0; position: relative; }
+    .divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #a5f3fc; }
+    .divider span { position: relative; background: #f0fdfa; padding: 0 1.5rem; color: #0e7490; font-weight: 700; letter-spacing: 0.08em; font-size: 0.9rem; }
+    .validation-section { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(8,145,178,0.08); }
+    .validation-section h2 { color: #0891B2; font-size: 1.4rem; border-bottom: 2px solid #a5f3fc; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .step { display: flex; gap: 1rem; margin: 1.25rem 0; align-items: flex-start; }
+    .step-num { background: #0891B2; color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .step-content { flex: 1; min-width: 0; }
+    .step-content h4 { color: #134e4a; font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .checkbox-list { list-style: none; margin-top: 0.5rem; }
+    .checkbox-list li { padding: 0.2rem 0; display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.88rem; color: #134e4a; }
+    .checkbox-list li::before { content: "☐"; font-size: 1rem; color: #0891B2; flex-shrink: 0; }
+    .rule-box { background: #cffafe; border: 2px solid #0891B2; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .rule-box h3 { color: #0e7490; margin-bottom: 0.5rem; font-size: 1rem; border: none; padding: 0; }
+    .rule-box ol { margin-left: 1.25rem; }
+    .rule-box li { color: #134e4a; font-size: 0.92rem; margin: 0.3rem 0; }
+    .completion-box { background: #ecfeff; border: 2px solid #0891B2; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+    .success-tip { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 1rem 1.25rem; margin-top: 1rem; color: #14532d; font-size: 0.92rem; }
+    .success-tip strong { color: #16a34a; }
+    footer { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 2rem; }
+
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { background: white; }
+      .header { background: #0891B2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .exercise, .validation-section, .intro-card { box-shadow: none; border: 1px solid #a5f3fc; page-break-inside: avoid; }
+      .step, .question-block { page-break-inside: avoid; }
+      .container { max-width: 100%; }
+      .intro-grid { grid-template-columns: 1fr 1fr; }
+      pre { page-break-inside: avoid; }
+      .divider { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="lab-badge">LAB MANUAL</div>
+  <h1>Lecture 4 — Cloud Deployment (Free Tier)</h1>
+  <p class="subtitle">ShopList DevOps Training &bull; Lecture 4 — Exercises + Validation Checklist</p>
+  <div class="badge-row">
+    <span class="badge">3 exercises</span>
+    <span class="badge">1 bonus</span>
+    <span class="badge">9-step validation</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="intro-grid">
+    <div class="intro-card">
+      <h3>Part A — Exercises</h3>
+      <p>Three graded exercises (Easy → Medium → Medium) plus one optional bonus, reinforcing Terraform planning, security-group networking, and Ansible idempotency by breaking and restoring real pieces of the free-tier deployment.</p>
+    </div>
+    <div class="intro-card">
+      <h3>Part B — Validation Checklist</h3>
+      <p>A 9-step ordered checklist — file structure through knowledge check — that proves the EC2 instance, minikube, and the GitHub Actions redeploy pipeline all work end to end before you merge.</p>
+    </div>
+  </div>
+
+  <div class="rule-box">
+    <h3>Rules</h3>
+    <ol>
+      <li>Complete in order — later steps assume earlier ones passed</li>
+      <li>Do not look at <code class="inline-code">student-guide.md</code> while validating; if a step fails, re-read the relevant concept first</li>
+      <li>Verify each expected output before moving to the next step</li>
+      <li>Run all commands from the project root unless a step says otherwise</li>
+    </ol>
+  </div>
+
+  <!-- Exercise 1 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num">1</div>
+      <div class="exercise-meta">
+        <h2>Inspect the Terraform Plan</h2>
+        <div class="tags">
+          <span class="tag">Easy</span>
+          <span class="tag">Observation</span>
+          <span class="tag">~10 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Task</h3>
+      <p>From <code class="inline-code">terraform/</code>, run <code class="inline-code">terraform plan -var="key_name=YOUR_KEY_NAME"</code> (do <strong>not</strong> run apply yet). Read the full output, resource by resource, and answer the questions below <strong>before</strong> running apply.</p>
+      <p style="margin-top:0.5rem; font-size:0.9rem;"><strong>Commands to research:</strong> <code class="inline-code">terraform plan</code>, <code class="inline-code">terraform show</code>, <code class="inline-code">terraform state list</code></p>
+    </div>
+
+    <div class="section">
+      <h3>What You Are Observing</h3>
+      <div class="observe">
+        <div class="observe-label">Observe</div>
+        <p>How closely a Terraform plan describes reality before anything is created — this is Concept 2 (Infrastructure as Code) in practice: the plan is the reviewable diff, and reading it is a skill.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Expected Results</h3>
+      <div class="expected">
+        <div class="expected-label">You should be able to answer, from the plan output alone</div>
+        <p>
+          1. How many resources will be created? (Expected: 2 — aws_security_group.shoplist, aws_instance.shoplist)<br>
+          2. What AMI ID will the instance use, and where did Terraform get it from? (Expected: from data.aws_ami.ubuntu, resolved at plan time — not hardcoded in the file)<br>
+          3. Which two ports does the security group open, and to which CIDR blocks?<br>
+          4. Will anything be changed or destroyed? (Expected: no — this is a from-scratch plan)
+        </p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Validation Command</h3>
+      <pre><code>terraform plan -var="key_name=YOUR_KEY_NAME" | grep -E "Plan:|will be created"</code></pre>
+      <div class="expected"><div class="expected-label">Expected</div>Plan: 2 to add, 0 to change, 0 to destroy.</div>
+    </div>
+  </div>
+
+  <!-- Exercise 2 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num medium">2</div>
+      <div class="exercise-meta">
+        <h2>Break the Security Group and Observe</h2>
+        <div class="tags">
+          <span class="tag">Medium</span>
+          <span class="tag">Break-and-fix</span>
+          <span class="tag">~15 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part A — Introduce the break</h3>
+      <p>Edit <code class="inline-code">terraform/main.tf</code>. Remove the NodePort ingress rule from <code class="inline-code">aws_security_group.shoplist</code>:</p>
+      <div class="broken">
+        <div class="broken-label">Before (delete this block)</div>
+        <pre><code>  ingress {
+    description = "ShopList frontend NodePort"
+    from_port   = 30080
+    to_port     = 30080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }</code></pre>
+      </div>
+      <pre><code>terraform apply -var="key_name=YOUR_KEY_NAME"</code></pre>
+    </div>
+
+    <div class="section">
+      <h3>Part B — Observe and record the failure</h3>
+      <pre><code>curl -v --max-time 5 http://YOUR_PUBLIC_IP:30080</code></pre>
+      <div class="observe">
+        <div class="observe-label">What you are observing</div>
+        <p>1. What happens — a connection error, a timeout, or an HTTP error code?<br>
+        2. Is the app itself still running inside minikube? (Check with <code class="inline-code">ssh ... "kubectl get pods -n shoplist"</code>)<br>
+        3. Why does removing a Terraform-managed security group rule affect reachability, when nothing about the app or the pods changed?</p>
+      </div>
+      <div class="expected">
+        <div class="expected-label">Expected observations</div>
+        <p>curl times out or reports "Connection timed out" — never reaches the server at all. kubectl get pods -n shoplist (over SSH) shows all pods still Running — the app is healthy. The failure is purely at the network layer: the security group is the only thing standing between the NodePort and the internet, and it's now closed.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part C — Restore the fix</h3>
+      <p>Add the ingress block back to <code class="inline-code">terraform/main.tf</code> and re-apply:</p>
+      <pre><code>terraform apply -var="key_name=YOUR_KEY_NAME"
+curl -s http://YOUR_PUBLIC_IP:30080 | grep -o "&lt;title&gt;.*&lt;/title&gt;"</code></pre>
+      <div class="expected"><div class="expected-label">Expected</div>The app is reachable again.</div>
+    </div>
+  </div>
+
+  <!-- Exercise 3 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num medium">3</div>
+      <div class="exercise-meta">
+        <h2>Remove the Swap File Task and Observe</h2>
+        <div class="tags">
+          <span class="tag">Medium</span>
+          <span class="tag">Remove-and-observe</span>
+          <span class="tag">~20 min</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:0.88rem; color:#0e7490; margin-bottom:1rem;">This exercise needs a <strong>fresh</strong> instance — run it against a second terraform apply (a different cluster_name/tag) or destroy and recreate your existing one, so minikube starts from scratch.</p>
+
+    <div class="section">
+      <h3>Part A — Remove the safeguard</h3>
+      <p>In <code class="inline-code">ansible/playbooks/install-minikube.yml</code>, comment out (or delete) the entire "Check for existing swap file" and "Create 2GB swap file" tasks. Re-run the playbook against a fresh instance:</p>
+      <pre><code>ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/install-minikube.yml
+ansible-playbook -i ansible/inventory/hosts.ini ansible/playbooks/deploy-app.yml \
+  -e "github_owner=YOUR_GITHUB_USERNAME"</code></pre>
+    </div>
+
+    <div class="section">
+      <h3>What You Are Observing</h3>
+      <pre><code>ssh -i ~/.ssh/YOUR_KEY.pem ubuntu@YOUR_PUBLIC_IP "free -h && kubectl get pods -n shoplist"</code></pre>
+      <div class="observe">
+        <div class="observe-label">Observe</div>
+        <p>A t3.micro has only 1GB of RAM. Without the 2GB swap file, minikube's control-plane components and the ShopList pods are competing for a very tight memory budget — you should see pods in CrashLoopBackOff/OOMKilled, or the node itself reporting memory pressure, far more often than with the swap file present. This is the same class of failure the readinessProbe on /health was designed to surface back in Lecture 2 — a pod that looks like it started but can't stay up under real resource pressure.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part C — Restore the fix</h3>
+      <p>Uncomment the swap-file tasks, re-run <code class="inline-code">install-minikube.yml</code> against a fresh instance, and confirm:</p>
+      <div class="expected"><div class="expected-label">Expected</div><code class="inline-code">free -h</code> shows a 2GB swap entry and pods stay Running.</div>
+    </div>
+  </div>
+
+  <!-- Bonus -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num optional">★</div>
+      <div class="exercise-meta">
+        <h2>Add a Post-Deploy Smoke Test</h2>
+        <div class="tags">
+          <span class="tag">Optional</span>
+          <span class="tag">Extension</span>
+          <span class="tag">~20 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Background</h3>
+      <p>Right now, <code class="inline-code">deploy</code> in <code class="inline-code">.github/workflows/ci-cd.yml</code> finishes as soon as <code class="inline-code">kubectl rollout status</code> succeeds — that confirms the Deployment is healthy, but not that the app actually answers HTTP requests correctly.</p>
+    </div>
+
+    <div class="section">
+      <h3>Task</h3>
+      <p>Add a final step to the deploy job's SSH script that curls the app and fails the job if it doesn't get a 200:</p>
+      <pre><code>      script: |
+        kubectl set image deployment/backend backend=ghcr.io/${{ github.repository_owner }}/shoplist-backend:${{ env.SHORT_SHA }} -n shoplist
+        kubectl set image deployment/frontend frontend=ghcr.io/${{ github.repository_owner }}/shoplist-frontend:${{ env.SHORT_SHA }} -n shoplist
+        kubectl rollout status deployment/backend -n shoplist --timeout=120s
+        kubectl rollout status deployment/frontend -n shoplist --timeout=120s
+        curl -sf http://localhost:30080 > /dev/null || (echo "Smoke test failed" && exit 1)</code></pre>
+    </div>
+
+    <div class="section">
+      <h3>Validation</h3>
+      <p>Push a deliberately broken frontend change (e.g. an image tag typo) and confirm the deploy job now fails on the smoke-test line, not silently succeeding with a broken app live in production.</p>
+      <div class="expected">
+        <div class="expected-label">Expected pipeline with the bonus</div>
+        build-backend → build-frontend → verify-registry → deploy (now including the curl smoke test as its last step, failing the whole job — and turning the GitHub Actions run red — if the app doesn't respond)
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"><span>PART A COMPLETE — PART B BEGINS</span></div>
+
+  <!-- Validation Checklist -->
+  <div class="validation-section">
+    <h2>Validation Checklist</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>File structure</h4>
+        <pre><code>ls terraform/ ansible/inventory/ ansible/playbooks/ .github/workflows/</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>
+          terraform/: main.tf, variables.tf, outputs.tf, versions.tf — no leftover VPC/EKS module files<br>
+          ansible/inventory/: hosts.ini.example (and your own hosts.ini, not committed)<br>
+          ansible/playbooks/: install-minikube.yml, deploy-app.yml<br>
+          .github/workflows/: ci-cd.yml (no build-and-push.yml left behind)
+        </div>
+        <ul class="checkbox-list"><li>No extra files beyond what's listed above</li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Terraform plan is clean</h4>
+        <pre><code>cd terraform
+terraform plan -var="key_name=YOUR_KEY_NAME"</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Plan: 2 to add, 0 to change, 0 to destroy. (or No changes. if already applied)</div>
+        <ul class="checkbox-list"><li>No errors, no unexpected resource changes</li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Infrastructure startup</h4>
+        <pre><code>terraform output public_ip
+ssh -i ~/.ssh/YOUR_KEY.pem ubuntu@$(terraform output -raw public_ip) "kubectl get nodes"</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>One node listed, status Ready</div>
+        <ul class="checkbox-list">
+          <li>EC2 instance reachable over SSH</li>
+          <li>minikube node shows Ready</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Health endpoint</h4>
+        <pre><code>curl -s http://YOUR_PUBLIC_IP:30080/api/health</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>The same JSON response as the backend's /health route returned in Lecture 1/2, now reachable over the public internet instead of only localhost.</div>
+        <ul class="checkbox-list"><li>Returns a 200 with the expected health JSON</li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Functional check (CRUD via curl)</h4>
+        <pre><code>curl -s -X POST http://YOUR_PUBLIC_IP:30080/api/products \
+  -H "Content-Type: application/json" -d '{"name":"cloud-test","quantity":1}'
+curl -s http://YOUR_PUBLIC_IP:30080/api/products
+curl -s -X DELETE http://YOUR_PUBLIC_IP:30080/api/products/&lt;id-from-above&gt;</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Create returns the new product, list includes it, delete removes it — identical behavior to Lecture 1/2, now running on AWS</div>
+        <ul class="checkbox-list"><li>Create, list, and delete all succeed over the public IP</li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h4>Browser check</h4>
+        <p style="font-size:0.88rem; color:#134e4a; margin-bottom:0.5rem;">Open <code class="inline-code">http://YOUR_PUBLIC_IP:30080</code> in a browser (ideally from a different device/network than your own laptop — a phone on cellular data is a good test).</p>
+        <div class="expected"><div class="expected-label">Expected</div>The ShopList UI loads and lets you add/remove products, exactly like the local minikube version</div>
+        <ul class="checkbox-list"><li>UI loads and is functional from a network other than your own</li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h4>Redeploy check (persistence + automation)</h4>
+        <pre><code># make a small visible change, e.g. a heading in app/frontend/index.html
+git add -A && git commit -m "test: redeploy check" && git push github feature/lecture-4:main
+# watch the Actions tab until deploy finishes, then:
+curl -s http://YOUR_PUBLIC_IP:30080 | grep -o "&lt;title&gt;.*&lt;/title&gt;"
+curl -s http://YOUR_PUBLIC_IP:30080/api/products</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>The visible change is live without any manual kubectl command, and the product data from Step 5 is still present — the redeploy updated the app without touching the database</div>
+        <ul class="checkbox-list">
+          <li>GitHub Actions deploy job completes successfully</li>
+          <li>The change is visible without manual intervention</li>
+          <li>Existing product data survived the redeploy</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h4>Git check</h4>
+        <pre><code>git status
+git log --oneline -3
+git remote -v</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Working tree clean. Latest commit message follows the &lt;type&gt;: &lt;description&gt; format from docs/bootstrap-kit.md. Both origin (GitLab) and github remotes are configured. .gitlab-ci.yml still passes on GitLab, unmodified in behavior from Lecture 3.</div>
+        <ul class="checkbox-list">
+          <li>Clean working tree, correctly formatted commit messages</li>
+          <li>Both remotes present and both pipelines green</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h4>Knowledge check</h4>
+        <p style="font-size:0.88rem; color:#134e4a; margin-bottom:0.5rem;">Answer these without looking at student-guide.md (honor system):</p>
+        <ol style="margin-left:1.25rem; font-size:0.9rem; color:#134e4a;">
+          <li>What problem does Terraform's state file solve?</li>
+          <li>Why doesn't AWS EKS fit the free tier?</li>
+          <li>What does "idempotent" mean, and where does install-minikube.yml demonstrate it?</li>
+          <li>Why is infrastructure provisioning kept out of the GitHub Actions pipeline?</li>
+          <li>How does the deploy job update the running app without any AWS credentials?</li>
+        </ol>
+        <div class="expected"><div class="expected-label">Pass criteria</div>Answer all 5 without hesitation.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="completion-box">
+    <h3 style="color:#0e7490; margin-bottom:0.75rem;">Completion</h3>
+    <p style="font-size:0.92rem; margin-bottom:0.75rem;">When all 9 steps pass:</p>
+    <pre><code>git add terraform/ ansible/ .github/workflows/ci-cd.yml .gitlab-ci.yml
+git commit -m "infra: add free-tier EC2 provisioning and GitHub Actions deploy pipeline (Lecture 4)"
+git checkout dev
+git merge feature/lecture-4
+git push origin dev</code></pre>
+    <div class="success-tip">
+      <strong>Project Complete:</strong> Lecture 4 is the last lecture in this course. Once dev is verified — all four lectures' work present and green — perform the one merge that is only ever correct at this point, per docs/bootstrap-kit.md §5 and §8:
+      <pre style="margin-top:0.5rem;"><code>git checkout main
+git merge dev
+git push origin main</code></pre>
+      This is intentionally different from every other lecture's completion action (which stops at dev). Only merge to main here, once, when the entire project is done.
+    </div>
+  </div>
+
+</div>
+
+<footer>Lecture 4 — Cloud Deployment (Free Tier) &bull; ShopList DevOps Training &bull; Lab Manual</footer>
+</body>
+</html>
