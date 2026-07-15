@@ -1,4 +1,4 @@
-# ShopList — End-to-End DevOps Pipeline
+# ShopList — DevOps project 2026
 
 **Nechama Spiegler**
 [Live Demo](http://34.244.59.62:30080) · [GitHub Repository](https://github.com/nechami-abc/DevOps-final-project)
